@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Formulario con AJAX</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body class="bg-light">
 
@@ -15,12 +15,12 @@
         <form id="contactForm">
           <div class="mb-3">
             <label for="nombre" class="form-label">Nombre:</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" required>
+            <input type="text" class="form-control" id="nombre" name="nombre" required />
           </div>
 
           <div class="mb-3">
             <label for="email" class="form-label">Correo:</label>
-            <input type="email" class="form-control" id="email" name="email" required>
+            <input type="email" class="form-control" id="email" name="email" required />
           </div>
 
           <div class="mb-3">
@@ -28,12 +28,17 @@
             <textarea class="form-control" id="mensaje" name="mensaje" rows="4" required></textarea>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100">Enviar</button>
+          <div class="mb-3">
+            <label for="idContacto" class="form-label">ID del contacto (para actualizar/eliminar):</label>
+            <input type="number" class="form-control" id="idContacto" />
+          </div>
 
-          
-  <button type="button" class="btn btn-warning ms-2" onclick="enviarDatos('PUT')">Actualizar (PUT)</button>
-  <button type="button" class="btn btn-info ms-2" onclick="enviarDatos('PATCH')">Modificar (PATCH)</button>
-  <button type="button" class="btn btn-danger ms-2" onclick="enviarDatos('DELETE')">Eliminar (DELETE)</button>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Enviar (POST)</button>
+            <button type="button" class="btn btn-warning" onclick="enviarDatos('PUT')">Actualizar (PUT)</button>
+            <button type="button" class="btn btn-info" onclick="enviarDatos('PATCH')">Modificar mensaje (PATCH)</button>
+            <button type="button" class="btn btn-danger" onclick="enviarDatos('DELETE')">Eliminar (DELETE)</button>
+          </div>
         </form>
 
         <p id="respuesta" class="mt-3 text-center"></p>
@@ -41,41 +46,59 @@
     </div>
   </div>
 
- <script>
-  const form = document.getElementById('contactForm');
+  <script>
+    const form = document.getElementById('contactForm');
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    enviarDatos('POST');
-  });
-
-  function enviarDatos(metodo) {
-    const data = {
-      nombre: document.getElementById('nombre').value,
-      email: document.getElementById('email').value,
-      mensaje: document.getElementById('mensaje').value
-    };
-
-    fetch('http://localhost:3000/api/contacto', {
-      method: metodo,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Error en respuesta');
-      return res.json();
-    })
-    .then(json => {
-      document.getElementById('respuesta').innerText = `✅ ${json.message}`;
-      console.log('Respuesta del backend:', json);
-    })
-    .catch(err => {
-      document.getElementById('respuesta').innerText = `❌ Error: ${err.message}`;
-      console.error(err);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      enviarDatos('POST');
     });
-  }
-</script>
 
+    function enviarDatos(metodo) {
+      const id = document.getElementById('idContacto').value.trim();
+      const nombre = document.getElementById('nombre').value;
+      const email = document.getElementById('email').value;
+      const mensaje = document.getElementById('mensaje').value;
+
+      let url = 'http://localhost:3000/api/contacto';
+      if (['PUT', 'PATCH', 'DELETE'].includes(metodo)) {
+        if (!id) {
+          document.getElementById('respuesta').innerText = '❌ Debes ingresar un ID para esa operación';
+          return;
+        }
+        url += `/${id}`;
+      }
+
+      const opciones = {
+        method: metodo,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+
+      if (metodo !== 'DELETE') {
+        // En PATCH solo mandamos mensaje
+        const body = metodo === 'PATCH'
+          ? { mensaje }
+          : { nombre, email, mensaje };
+        opciones.body = JSON.stringify(body);
+      }
+
+      fetch(url, opciones)
+        .then(res => {
+          if (!res.ok) throw new Error(`Error ${res.status}`);
+          return res.json();
+        })
+        .then(json => {
+          document.getElementById('respuesta').innerText = `✅ ${json.message}`;
+          console.log('Respuesta del backend:', json);
+        })
+        .catch(err => {
+          document.getElementById('respuesta').innerText = `❌ Error: ${err.message}`;
+          console.error(err);
+        });
+    }
+  </script>
 
 </body>
 </html>
