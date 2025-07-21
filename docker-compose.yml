@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  mysql_container:
+    image: mysql:5.7
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: formulario_db
+      MYSQL_USER: usuario
+      MYSQL_PASSWORD: clave123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - red_backend
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql_container
+    environment:
+      DB_HOST: mysql_container
+      DB_USER: usuario
+      DB_PASSWORD: clave123
+      DB_NAME: formulario_db
+    networks:
+      - red_backend
+
+volumes:
+  mysql_data:
+
+networks:
+  red_backend:
+    driver: bridge
